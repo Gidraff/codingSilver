@@ -1,0 +1,42 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-authn
+  namespace: kube-system
+  labels:
+    app: authn-webhook
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: authn-webhook
+  template:
+    metadata:
+      labels:
+        app: authn-webhook
+    spec:
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+      containers:
+        - name: authn-webhook
+          image: gidraff/authn-webhook:latest
+          imagePullPolicy: IfNotPresent
+          command:
+            - /usr/local/bin/authn-webhook
+            - --tls-cert-file=./cert.pem
+            - --tls-private-key-file=./key.pem
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-authn
+  namespace: kube-system
+spec:
+  ports:
+    - port: 443
+      protocol: TCP
+      targetPort: 443
+  selector:
+    app: authn-webhook
